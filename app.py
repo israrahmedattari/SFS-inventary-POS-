@@ -883,7 +883,7 @@ with tabs[1]:
 
 st.warning(
     "⚠️ Deleting a product is permanent. "
-    "If this product has sales history, it may not be possible to delete it."
+    "Products with sales or stock history cannot be deleted."
 )
 
 if st.button(
@@ -893,7 +893,8 @@ if st.button(
 ):
 
     try:
-        # Check whether this product has sales history
+
+        # Check sales history
         sale_check = (
             supabase
             .table("sale_items")
@@ -906,8 +907,8 @@ if st.button(
         if sale_check.data:
 
             st.error(
-                "❌ This product cannot be deleted because "
-                "it already has sales history."
+                "❌ Cannot delete this product because "
+                "it has sales history."
             )
 
         else:
@@ -925,20 +926,18 @@ if st.button(
             if movement_check.data:
 
                 st.error(
-                    "❌ This product has stock history and "
-                    "cannot be deleted."
+                    "❌ Cannot delete this product because "
+                    "it has stock history."
                 )
 
             else:
 
                 # Delete product
-                delete_result = (
-                    supabase
-                    .table("products")
-                    .delete()
-                    .eq("id", pid)
+                supabase \
+                    .table("products") \
+                    .delete() \
+                    .eq("id", pid) \
                     .execute()
-                )
 
                 refresh()
 
@@ -953,8 +952,6 @@ if st.button(
         st.error(
             f"❌ Unable to delete product: {str(e)}"
         )
-
-
 # ==============================================================
 # LOW STOCK
 # ==============================================================
