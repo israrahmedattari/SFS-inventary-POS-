@@ -879,16 +879,8 @@ with tabs[1]:
                     st.success("Product updated.")
                     st.rerun()
 
-# ------------------------- DELETE PRODUCT -------------------------
-
  # ------------------------- SAFE DELETE PRODUCT -------------------------
-
-if st.button(
-    "🗑️ Delete Product",
-    key="delete_prod",
-    use_container_width=True
-):
-
+ 
     try:
 
         # Check sales history
