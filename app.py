@@ -1,4 +1,5 @@
 import io
+import hmac
 from datetime import datetime, date, timedelta
 
 import pandas as pd
@@ -28,6 +29,60 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+# ============================================================
+# OWNER LOGIN
+# ============================================================
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+
+def show_login():
+
+    st.markdown(
+        """
+        <div style="
+            max-width:480px;
+            margin:120px auto 20px auto;
+            padding:35px;
+            background:#101c30;
+            border:1px solid #243653;
+            border-radius:20px;
+            text-align:center;
+        ">
+            <h1 style="color:white;">  💻 SFS ENTERPRISES</h1>
+            <p style="color:#91a3be;">
+                SIGN IN
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    password = st.text_input(
+        "🔑 Enter Password",
+        type="password",
+        placeholder="Enter owner password"
+    )
+
+    if st.button(
+        "🔓 Login",
+        type="primary",
+        use_container_width=True
+    ):
+        correct_password = st.secrets["OWNER_PASSWORD"]
+
+        if hmac.compare_digest(password, correct_password):
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("❌ Incorrect password")
+
+
+# Show login before the application
+if not st.session_state.authenticated:
+    show_login()
+    st.stop()
 
 CURRENCY = "PKR"
 
@@ -300,7 +355,6 @@ def products_df():
         "cost_price", "sale_price", "stock", "min_stock", "location", "created_at", "updated_at"
     ])
 
-
 @st.cache_data(ttl=2)
 def sales_df():
     res = supabase.table("sales").select("*").order("sale_date", desc=True).order("id", desc=True).execute()
@@ -489,31 +543,70 @@ if not products.empty:
 if not sales.empty:
     sales["grand_total"] = pd.to_numeric(sales["grand_total"], errors="coerce").fillna(0.0)
 
-# ------------------------- SIDEBAR ----------------------------
+ # ------------------------- SIDEBAR ----------------------------
 
 with st.sidebar:
-    st.markdown("### 🧭 SFS Control Center")
-    st.caption("Laptop spare-parts inventory & POS")
+
+    # Business heading
+    st.markdown("### 💻 SFS ENTERPRISES")
+    st.caption("Our Standard Is Your Trust")
+
+    # Owner access
+    st.markdown("---")
+    st.markdown("### 🔐 Owner Access")
+
+    # Logout button
+    if st.button(
+        "🚪 Logout",
+        use_container_width=True
+    ):
+        st.session_state.authenticated = False
+        st.rerun()
+
     st.divider()
 
-    st.metric("Products", len(products))
+    # Inventory statistics
     st.metric(
-        "Low Stock",
-        int((products["stock"] <= products["min_stock"]).sum()) if not products.empty else 0
+        "📦 Products",
+        len(products)
     )
+
     st.metric(
-        "Today's Revenue",
+        "🚨 Low Stock",
+        int(
+            (products["stock"] <= products["min_stock"]).sum()
+        ) if not products.empty else 0
+    )
+
+    # Today's revenue
+    st.metric(
+        "💰 Today's Revenue",
         money(
             sales[
-                pd.to_datetime(sales["sale_date"], errors="coerce").dt.date == date.today()
+                pd.to_datetime(
+                    sales["sale_date"],
+                    errors="coerce"
+                ).dt.date == date.today()
             ]["grand_total"].sum()
         ) if not sales.empty else money(0)
     )
 
     st.divider()
-    st.caption("Tip")
-    st.caption("Sell from POS or Barcode Scanner → stock is automatically updated.")
 
+    # Helpful information
+    st.markdown("### 💡 Quick Tip")
+
+    st.caption(
+        "Sell from POS or use the Barcode Scanner. "
+        "Stock is automatically updated after every sale."
+    )
+
+    st.divider()
+
+    # Application information
+    st.caption("💻 SFS ENTERPRISES")
+    st.caption("Inventory Management • POS Billing")
+    st.caption("@sfsAll Right Reserved")
 # --------------------------- NAVIGATION TABS -----------------------------
 
 tabs = st.tabs([
