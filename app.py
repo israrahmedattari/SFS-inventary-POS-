@@ -548,8 +548,8 @@ if not sales.empty:
 with st.sidebar:
 
     # Business heading
-    st.markdown("### 💻 SFS ENTERPISES")
-    st.caption("OUR STANDARD IS YOUR TRUST")
+    st.markdown("### 💻 SFS ENTERPRISES")
+    st.caption("Our Standard Is Your Trust")
 
     # Owner access
     st.markdown("---")
@@ -606,7 +606,7 @@ with st.sidebar:
     # Application information
     st.caption("💻 SFS ENTERPRISES")
     st.caption("Inventory Management • POS Billing")
-    st.caption("@sfs all right reserved")
+    st.caption("@sfsAll Right Reserved")
 # --------------------------- NAVIGATION TABS -----------------------------
 
 tabs = st.tabs([
