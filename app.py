@@ -881,11 +881,74 @@ with tabs[1]:
 
 # ------------------------- DELETE PRODUCT -------------------------
 
-if st.button("🗑️ Delete Product", key="delete_prod", use_container_width=True):
-    supabase.table("products").delete().eq("id", pid).execute()
-    refresh()
-    st.success("Product deleted.")
-    st.rerun()
+ # ------------------------- SAFE DELETE PRODUCT -------------------------
+
+if st.button(
+    "🗑️ Delete Product",
+    key="delete_prod",
+    use_container_width=True
+):
+
+    try:
+
+        # Check sales history
+        sale_check = (
+            supabase
+            .table("sale_items")
+            .select("id")
+            .eq("product_id", pid)
+            .limit(1)
+            .execute()
+        )
+
+        if sale_check.data:
+
+            st.error(
+                "❌ Cannot delete this product because "
+                "it has sales history."
+            )
+
+        else:
+
+            # Check stock movement history
+            movement_check = (
+                supabase
+                .table("stock_movements")
+                .select("id")
+                .eq("product_id", pid)
+                .limit(1)
+                .execute()
+            )
+
+            if movement_check.data:
+
+                st.error(
+                    "❌ Cannot delete this product because "
+                    "it has stock history."
+                )
+
+            else:
+
+                # Delete product
+                supabase \
+                    .table("products") \
+                    .delete() \
+                    .eq("id", pid) \
+                    .execute()
+
+                refresh()
+
+                st.success(
+                    f"✅ Product '{row['name']}' deleted successfully."
+                )
+
+                st.rerun()
+
+    except Exception as e:
+
+        st.error(
+            f"❌ Unable to delete product: {str(e)}"
+        )
 
 # ==============================================================
 # LOW STOCK
