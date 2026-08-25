@@ -50,9 +50,9 @@ def show_login():
             border-radius:20px;
             text-align:center;
         ">
-            <h1 style="color:white;">🔐 SFS ENTERPRISES</h1>
+            <h1 style="color:white;">  💻 SFS ENTERPRISES</h1>
             <p style="color:#91a3be;">
-                Owner Login • Inventory & POS
+                SIGN IN
             </p>
         </div>
         """,
@@ -548,8 +548,8 @@ if not sales.empty:
 with st.sidebar:
 
     # Business heading
-    st.markdown("### 🧭 SFS Control Center")
-    st.caption("Laptop spare-parts inventory & POS")
+    st.markdown("### 💻 SFS ENTERPISES")
+    st.caption("OUR STANDARD IS YOUR TRUST")
 
     # Owner access
     st.markdown("---")
@@ -606,7 +606,7 @@ with st.sidebar:
     # Application information
     st.caption("💻 SFS ENTERPRISES")
     st.caption("Inventory Management • POS Billing")
-    st.caption("🔐 Owner Protected")
+    st.caption("@sfs all right reserved")
 # --------------------------- NAVIGATION TABS -----------------------------
 
 tabs = st.tabs([
