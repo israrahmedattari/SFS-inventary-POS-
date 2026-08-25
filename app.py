@@ -292,28 +292,13 @@ def generate_barcode_image(code_text):
     return rv
 
 
-"""@st.cache_data(ttl=2)
+@st.cache_data(ttl=2)
 def products_df():
     res = supabase.table("products").select("*").order("name").execute()
     return pd.DataFrame(res.data) if res.data else pd.DataFrame(columns=[
         "id", "name", "sku", "brand", "model", "category", "supplier",
         "cost_price", "sale_price", "stock", "min_stock", "location", "created_at", "updated_at"
-    ])"""
-@st.cache_data(ttl=2)
-def products_df():
-    try:
-        res = supabase.table("products").select("*").order("name").execute()
-
-        return pd.DataFrame(res.data) if res.data else pd.DataFrame(columns=[
-            "id", "name", "sku", "brand", "model", "category", "supplier",
-            "cost_price", "sale_price", "stock", "min_stock",
-            "location", "created_at", "updated_at"
-        ])
-
-    except Exception as e:
-        st.error(f"Supabase products error: {e}")
-        st.stop()
-
+    ])
 
 @st.cache_data(ttl=2)
 def sales_df():
