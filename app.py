@@ -490,6 +490,22 @@ def delete_sale_and_restore_stock(sale_id):
     return True, f"Sale {invoice_no} deleted and stock restored."
 
 
+def clear_test_data():
+    """
+    Production launch cleanup:
+    - Deletes all sale items
+    - Deletes all sales
+    - Deletes all stock movement/history records
+    - Deletes all customers
+    - Keeps the products table and current product stock unchanged
+    """
+    # Child records first, then parent records.
+    supabase.table("sale_items").delete().gt("id", -1).execute()
+    supabase.table("sales").delete().gt("id", -1).execute()
+    supabase.table("stock_movements").delete().gt("id", -1).execute()
+    supabase.table("customers").delete().gt("id", -1).execute()
+
+
 def invoice_number():
     return "SFS-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f")[-8:]
 
@@ -653,6 +669,61 @@ with st.sidebar:
     ):
         st.session_state.authenticated = False
         st.rerun()
+
+    st.divider()
+
+    # Production launch cleanup
+    with st.expander("🔐 Production Reset / Clear Test Data"):
+        st.warning(
+            "⚠️ This will permanently delete ALL sales, sale items, "
+            "stock history, and customers. Your products and their current "
+            "stock quantities will NOT be deleted or changed."
+        )
+
+        st.caption(
+            "Use this only once before going live if the records currently "
+            "in the database are testing records."
+        )
+
+        reset_confirm = st.checkbox(
+            "I understand that this will permanently delete the test transaction data.",
+            key="production_reset_confirm",
+        )
+
+        reset_word = st.text_input(
+            'Type "RESET" to enable the cleanup',
+            key="production_reset_word",
+            placeholder="RESET",
+        )
+
+        reset_ready = (
+            reset_confirm
+            and reset_word.strip().upper() == "RESET"
+        )
+
+        if st.button(
+            "🧹 CLEAR TEST DATA",
+            key="production_reset_button",
+            use_container_width=True,
+            disabled=not reset_ready,
+        ):
+            try:
+                clear_test_data()
+
+                # Clear any active POS cart as well.
+                st.session_state.cart = []
+
+                refresh()
+                st.success(
+                    "✅ Test data cleared. Products and current stock were preserved."
+                )
+                st.rerun()
+
+            except Exception as e:
+                st.error(
+                    "Could not clear the test data. Check your Supabase "
+                    "table permissions and database relationships."
+                )
 
     st.divider()
 
