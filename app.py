@@ -673,7 +673,7 @@ with st.sidebar:
     st.divider()
 
     # Production launch cleanup
-    with st.expander("🔐 Production Reset / Clear Test Data"):
+    with st.expander("Reset Inventary"):
         st.warning(
             "⚠️ This will permanently delete ALL sales, sale items, "
             "stock history, and customers. Your products and their current "
@@ -702,7 +702,7 @@ with st.sidebar:
         )
 
         if st.button(
-            "🧹 CLEAR TEST DATA",
+            "🧹  CLEAR ALL",
             key="production_reset_button",
             use_container_width=True,
             disabled=not reset_ready,
