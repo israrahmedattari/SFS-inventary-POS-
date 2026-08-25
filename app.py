@@ -880,7 +880,11 @@ with tabs[1]:
                     st.rerun()
 
  # ------------------------- SAFE DELETE PRODUCT -------------------------
- 
+ if st.button("🗑️ Delete Product", key="delete_prod", use_container_width=True):
+    supabase.table("products").delete().eq("id", pid).execute()
+    refresh()
+    st.success("Product deleted.")
+    st.rerun()
     try:
 
         # Check sales history
