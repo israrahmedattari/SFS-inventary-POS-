@@ -399,6 +399,97 @@ def record_movement(product_id, name, kind, qty, note=""):
     }).execute()
 
 
+def delete_product_safely(product_id):
+    """Delete a product only when it has no sales history."""
+    sale_check = (
+        supabase.table("sale_items")
+        .select("id")
+        .eq("product_id", product_id)
+        .limit(1)
+        .execute()
+    )
+
+    if sale_check.data:
+        return False, "This product has sales history and cannot be deleted."
+
+    # Remove stock movements first because they reference the product.
+    supabase.table("stock_movements").delete().eq(
+        "product_id", product_id
+    ).execute()
+
+    supabase.table("products").delete().eq("id", product_id).execute()
+    return True, "Product deleted successfully."
+
+
+def delete_sale_and_restore_stock(sale_id):
+    """Delete a sale and restore all quantities sold on that invoice."""
+    sale_res = (
+        supabase.table("sales")
+        .select("*")
+        .eq("id", sale_id)
+        .limit(1)
+        .execute()
+    )
+
+    if not sale_res.data:
+        return False, "Sale record was not found."
+
+    sale = sale_res.data[0]
+    invoice_no = sale.get("invoice_no", str(sale_id))
+
+    items_res = (
+        supabase.table("sale_items")
+        .select("*")
+        .eq("sale_id", sale_id)
+        .execute()
+    )
+    items = items_res.data or []
+
+    # Restore stock for every item on the deleted invoice.
+    for item in items:
+        product_id = item.get("product_id")
+        qty = int(item.get("quantity") or 0)
+
+        if product_id is None or qty <= 0:
+            continue
+
+        prod_res = (
+            supabase.table("products")
+            .select("id,name,stock")
+            .eq("id", product_id)
+            .limit(1)
+            .execute()
+        )
+
+        if prod_res.data:
+            prod = prod_res.data[0]
+            restored_stock = int(prod.get("stock") or 0) + qty
+
+            supabase.table("products").update({
+                "stock": restored_stock,
+                "updated_at": datetime.now().isoformat(),
+            }).eq("id", product_id).execute()
+
+            record_movement(
+                product_id,
+                prod.get("name") or item.get("product_name") or "Product",
+                "SALE_DELETE",
+                qty,
+                f"Reversed deleted invoice {invoice_no}",
+            )
+
+    # Delete original SALE movement records for this invoice.
+    supabase.table("stock_movements").delete().eq(
+        "movement_type", "SALE"
+    ).eq("note", f"Invoice {invoice_no}").execute()
+
+    # Delete child records before deleting the sale parent.
+    supabase.table("sale_items").delete().eq("sale_id", sale_id).execute()
+    supabase.table("sales").delete().eq("id", sale_id).execute()
+
+    return True, f"Sale {invoice_no} deleted and stock restored."
+
+
 def invoice_number():
     return "SFS-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f")[-8:]
 
@@ -879,6 +970,40 @@ with tabs[1]:
                     st.success("Product updated.")
                     st.rerun()
 
+                st.divider()
+                st.markdown("#### 🗑️ Delete Selected Product")
+                st.warning(
+                    "Deleting a product is permanent. A product with sales history "
+                    "cannot be deleted because it is needed for historical records."
+                )
+
+                confirm_delete_product = st.checkbox(
+                    "I understand that this deletion is permanent.",
+                    key=f"confirm_delete_product_{pid}",
+                )
+
+                if st.button(
+                    "🗑️ Delete Selected Product",
+                    key=f"delete_product_{pid}",
+                    use_container_width=True,
+                    disabled=not confirm_delete_product,
+                ):
+                    try:
+                        deleted, message = delete_product_safely(pid)
+
+                        if deleted:
+                            refresh()
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+
+                    except Exception:
+                        st.error(
+                            "Unable to delete this product. It may be referenced "
+                            "by other database records."
+                        )
+
  # ------------------------- SAFE DELETE PRODUCT -------------------------
 
 # ==============================================================
@@ -1115,7 +1240,64 @@ with tabs[5]:
     if sales.empty:
         st.info("No sales records available.")
     else:
-        st.dataframe(sales[["invoice_no", "customer_name", "grand_total", "payment_method", "sale_date"]], use_container_width=True, hide_index=True)
+        sales_view = sales[
+            ["id", "invoice_no", "customer_name", "grand_total", "payment_method", "sale_date"]
+        ].copy()
+
+        st.dataframe(
+            sales_view.drop(columns=["id"]),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        st.divider()
+        st.markdown("#### 🗑️ Delete Sale")
+
+        sale_id = st.selectbox(
+            "Select Sale / Invoice to Delete",
+            sales["id"].tolist(),
+            format_func=lambda x: (
+                f"{sales.loc[sales['id'] == x, 'invoice_no'].iloc[0]} — "
+                f"{sales.loc[sales['id'] == x, 'customer_name'].iloc[0] or 'Walk-in Customer'} — "
+                f"{money(sales.loc[sales['id'] == x, 'grand_total'].iloc[0])}"
+            ),
+            key="delete_sale_select",
+        )
+
+        selected_sale = sales[sales["id"] == sale_id].iloc[0]
+
+        st.warning(
+            f"Deleting invoice {selected_sale['invoice_no']} is permanent. "
+            "Its sale items will be removed and sold quantities will be returned "
+            "to inventory."
+        )
+
+        confirm_delete_sale = st.checkbox(
+            "I understand that this sale will be permanently deleted and stock will be restored.",
+            key=f"confirm_delete_sale_{sale_id}",
+        )
+
+        if st.button(
+            "🗑️ Delete Selected Sale & Restore Stock",
+            key=f"delete_sale_{sale_id}",
+            use_container_width=True,
+            disabled=not confirm_delete_sale,
+        ):
+            try:
+                deleted, message = delete_sale_and_restore_stock(sale_id)
+
+                if deleted:
+                    refresh()
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
+
+            except Exception:
+                st.error(
+                    "Unable to delete the sale. Check your Supabase foreign-key "
+                    "relationships and database permissions."
+                )
 
 
 # ==============================================================
