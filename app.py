@@ -96,6 +96,7 @@ CATEGORIES = [
 ]
 
 BRANDS = ["HP", "Dell", "Lenovo", "Acer", "Asus", "Apple", "Toshiba", "Other"]
+PURCHASE_PAYMENT_METHODS = ["Cash", "Credit", "Bank Transfer", "Easypaisa", "JazzCash"]
 
 # ------------------------- SUPABASE CONNECTION --------------------------
 
@@ -352,7 +353,7 @@ def products_df():
     res = supabase.table("products").select("*").order("name").execute()
     return pd.DataFrame(res.data) if res.data else pd.DataFrame(columns=[
         "id", "name", "sku", "brand", "model", "category", "supplier",
-        "cost_price", "sale_price", "stock", "min_stock", "location", "created_at", "updated_at"
+        "purchase_payment_method", "cost_price", "sale_price", "stock", "min_stock", "location", "created_at", "updated_at"
     ])
 
 @st.cache_data(ttl=2)
@@ -642,6 +643,8 @@ sales = sales_df()
 sale_items = sale_items_df()
 
 if not products.empty:
+    if "purchase_payment_method" not in products.columns:
+        products["purchase_payment_method"] = "Cash"
     for col in ["stock", "min_stock"]:
         products[col] = pd.to_numeric(products[col], errors="coerce").fillna(0).astype(int)
     for col in ["cost_price", "sale_price"]:
@@ -883,10 +886,11 @@ with tabs[1]:
 
     search = st.text_input("🔎 Search product / SKU / Barcode / Model / Brand", placeholder="Type or scan barcode...")
 
-    f1, f2, f3 = st.columns(3)
+    f1, f2, f3, f4 = st.columns(4)
     category = f1.selectbox("Category Filter", ["All"] + CATEGORIES)
     brand_filt = f2.selectbox("Brand Filter", ["All"] + BRANDS)
-    status = f3.selectbox("Stock Status", ["All", "In Stock", "Low Stock", "Out of Stock"])
+    purchase_pay_filt = f3.selectbox("Purchase Payment Filter", ["All"] + PURCHASE_PAYMENT_METHODS)
+    status = f4.selectbox("Stock Status", ["All", "In Stock", "Low Stock", "Out of Stock"])
 
     view = products.copy()
 
@@ -906,6 +910,9 @@ with tabs[1]:
     if brand_filt != "All":
         view = view[view["brand"] == brand_filt]
 
+    if purchase_pay_filt != "All":
+        view = view[view["purchase_payment_method"] == purchase_pay_filt]
+
     if status == "In Stock":
         view = view[view["stock"] > view["min_stock"]]
     elif status == "Low Stock":
@@ -913,10 +920,10 @@ with tabs[1]:
     elif status == "Out of Stock":
         view = view[view["stock"] <= 0]
 
-    show = view[
-        ["id", "sku", "name", "brand", "model", "category", "supplier",
-         "stock", "min_stock", "cost_price", "sale_price", "location"]
-    ].copy()
+    cols_to_show = ["id", "sku", "name", "brand", "model", "category", "supplier",
+                    "purchase_payment_method", "stock", "min_stock", "cost_price", "sale_price", "location"]
+    existing_cols = [c for c in cols_to_show if c in view.columns]
+    show = view[existing_cols].copy()
 
     st.caption(f"{len(show)} product(s) found")
     st.dataframe(show, use_container_width=True, hide_index=True)
@@ -940,11 +947,12 @@ with tabs[1]:
                 supplier = p6.text_input("Supplier Name")
                 location = p7.text_input("Shelf / Location")
 
-                p8, p9, p10, p11 = st.columns(4)
+                p8, p9, p10, p11, p12 = st.columns(5)
                 cost = p8.number_input("Purchase Cost", min_value=0.0, step=100.0)
                 price = p9.number_input("Selling Price", min_value=0.0, step=100.0)
                 stock = p10.number_input("Opening Stock", min_value=0, step=1)
                 min_stock = p11.number_input("Min Stock Level", min_value=0, value=5, step=1)
+                purchase_payment = p12.selectbox("Purchase Payment Used *", PURCHASE_PAYMENT_METHODS)
 
                 submit = st.form_submit_button("💾 Save Product", type="primary", use_container_width=True)
 
@@ -964,6 +972,7 @@ with tabs[1]:
                             "model": model_in.strip(),
                             "category": category_new,
                             "supplier": supplier.strip(),
+                            "purchase_payment_method": purchase_payment,
                             "cost_price": cost,
                             "sale_price": price,
                             "stock": int(stock),
@@ -976,14 +985,14 @@ with tabs[1]:
                         pid = res.data[0]["id"]
 
                         if stock:
-                            record_movement(pid, name, "PURCHASE", int(stock), "Opening stock")
+                            record_movement(pid, name, "PURCHASE", int(stock), f"Opening stock ({purchase_payment})")
 
                         refresh()
                         st.success(f"Product added. Generated Barcode SKU: {auto_sku}")
                         st.rerun()
 
                     except Exception as e:
-                        st.error("Product name or SKU already exists.")
+                        st.error("Product name or SKU already exists, or the Supabase table needs a 'purchase_payment_method' column.")
 
     with edit:
         with st.expander("✏️ Update Product / Print Barcode"):
@@ -1015,6 +1024,15 @@ with tabs[1]:
                     ecat = e5.selectbox("Category", CATEGORIES, index=CATEGORIES.index(row["category"]) if row["category"] in CATEGORIES else 0)
                     esupplier = e6.text_input("Supplier", value=row["supplier"] or "")
 
+                    current_pay_method = row.get("purchase_payment_method", "Cash")
+                    if current_pay_method not in PURCHASE_PAYMENT_METHODS:
+                        current_pay_method = "Cash"
+                    epurchase_payment = st.selectbox(
+                        "Purchase Payment Method",
+                        PURCHASE_PAYMENT_METHODS,
+                        index=PURCHASE_PAYMENT_METHODS.index(current_pay_method)
+                    )
+
                     e7, e8, e9 = st.columns(3)
                     ecost = e7.number_input("Cost", value=float(row["cost_price"]))
                     eprice = e8.number_input("Price", value=float(row["sale_price"]))
@@ -1031,6 +1049,7 @@ with tabs[1]:
                         "model": emodel.strip(),
                         "category": ecat,
                         "supplier": esupplier.strip(),
+                        "purchase_payment_method": epurchase_payment,
                         "cost_price": ecost,
                         "sale_price": eprice,
                         "stock": estock,
