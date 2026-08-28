@@ -96,7 +96,7 @@ CATEGORIES = [
 ]
 
 BRANDS = ["HP", "Dell", "Lenovo", "Acer", "Asus", "Apple", "Toshiba", "Other"]
-PURCHASE_PAYMENT_METHODS = ["Cash", "Credit", "Bank Transfer", "Easypaisa", "JazzCash"]
+PURCHASE_PAYMENT_METHODS = ["Cash", "Credit",]
 
 # ------------------------- SUPABASE CONNECTION --------------------------
 
