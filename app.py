@@ -880,6 +880,9 @@ with tabs[0]:
 # ==============================================================
 # PRODUCTS
 # ==============================================================
+# ==============================================================
+# PRODUCTS
+# ==============================================================
 
 with tabs[1]:
     st.markdown('<div class="page-title">📦 Product Inventory</div>', unsafe_allow_html=True)
@@ -932,7 +935,8 @@ with tabs[1]:
     add, edit = st.columns(2)
 
     with add:
-        with st.expander("➕ Add New Product", expanded=products.empty):
+        # Changed expanded to True so the section stays wide open by default
+        with st.expander("➕ Add New Product", expanded=True):
             with st.form("add_product", clear_on_submit=True):
                 p1, p2 = st.columns(2)
                 name = p1.text_input("Product Name *")
@@ -947,9 +951,12 @@ with tabs[1]:
                 supplier = p6.text_input("Supplier Name")
                 location = p7.text_input("Shelf / Location")
 
-                p8, p9, p10, p11, p12 = st.columns(5)
+                # Adjusted inputs to 2 & 3 columns for maximum input field width and visibility
+                p8, p9 = st.columns(2)
                 cost = p8.number_input("Purchase Cost", min_value=0.0, step=100.0)
                 price = p9.number_input("Selling Price", min_value=0.0, step=100.0)
+
+                p10, p11, p12 = st.columns(3)
                 stock = p10.number_input("Opening Stock", min_value=0, step=1)
                 min_stock = p11.number_input("Min Stock Level", min_value=0, value=5, step=1)
                 purchase_payment = p12.selectbox("Purchase Payment Used *", PURCHASE_PAYMENT_METHODS)
@@ -995,7 +1002,7 @@ with tabs[1]:
                         st.error("Product name or SKU already exists, or the Supabase table needs a 'purchase_payment_method' column.")
 
     with edit:
-        with st.expander("✏️ Update Product / Print Barcode"):
+        with st.expander("✏️ Update Product / Print Barcode", expanded=False):
             if products.empty:
                 st.info("No products available.")
             else:
@@ -1093,7 +1100,6 @@ with tabs[1]:
                             "Unable to delete this product. It may be referenced "
                             "by other database records."
                         )
-
  # ------------------------- SAFE DELETE PRODUCT -------------------------
 
 # ==============================================================
