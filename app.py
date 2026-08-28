@@ -91,6 +91,7 @@ CATEGORIES = [
     "Laptop Charger",
     "Laptop Screen",
     "Laptop Keyboard",
+    "Laptop Battery",
     "DC Jack",
     "Cooling Fan"
 ]
