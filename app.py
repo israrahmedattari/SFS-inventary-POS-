@@ -32,8 +32,7 @@ st.set_page_config(
 # ============================================================
 # OWNER LOGIN
 # ============================================================
-
- TRIAL_EXPIRATION_DATE = date(2026, 8, 30)  # Replace with your specific Saturday date
+TRIAL_EXPIRATION_DATE = date(2026, 8, 30)  # Replace with your specific Saturday date
 
 def show_404():
     """Renders a standard 404 Not Found UI and stops execution."""
