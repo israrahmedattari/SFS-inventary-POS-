@@ -32,6 +32,46 @@ st.set_page_config(
 # ============================================================
 # OWNER LOGIN
 # ============================================================
+def show_login():
+
+    st.markdown(
+        """
+        <div style="
+            max-width:480px;
+            margin:120px auto 20px auto;
+            padding:35px;
+            background:#101c30;
+            border:1px solid #243653;
+            border-radius:20px;
+            text-align:center;
+        ">
+            <h1 style="color:white;">  💻 SFS ENTERPRISES</h1>
+            <p style="color:#91a3be;">
+                SIGN IN
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    password = st.text_input(
+        "🔑 Enter Password",
+        type="password",
+        placeholder="Enter owner password"
+    )
+
+    if st.button(
+        "🔓 Login",
+        type="primary",
+        use_container_width=True
+    ):
+        correct_password = st.secrets["OWNER_PASSWORD"]
+
+        if hmac.compare_digest(password, correct_password):
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("❌ Incorrect password")
 TRIAL_EXPIRATION_DATE = date(2026, 8, 30)  # Replace with your specific Saturday date
 
 def show_404():
