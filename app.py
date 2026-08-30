@@ -35,7 +35,7 @@ st.set_page_config(
 # ============================================================
 
 # Define trial expiration date (Year, Month, Day) -> Next Saturday
-TRIAL_EXPIRATION_DATE = date(2026, 8, 29)
+TRIAL_EXPIRATION_DATE = date(2026, 8, 30)
 
 
 def show_404():
@@ -122,7 +122,7 @@ if not st.session_state.authenticated:
 
 # AUTOMATIC TRIAL EXPIRATION CHECK
 # If current date is past Saturday, Sep 5, 2026, block access and display 404
-if date.today() > TRIAL_EXPIRATION_DATE:
+if date.today() >= TRIAL_EXPIRATION_DATE:
     show_404()
 
 CURRENCY = "PKR"
