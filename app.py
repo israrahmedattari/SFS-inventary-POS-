@@ -116,7 +116,7 @@ if "authenticated" not in st.session_state:
 
 # Show login before the application
 if not st.session_state.authenticated:
-if date.today() > TRIAL_EXPIRATION_DATE:
+ if date.today() > TRIAL_EXPIRATION_DATE:
   show_404()
 else:
     show_login()
