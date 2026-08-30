@@ -35,7 +35,7 @@ st.set_page_config(
 # ============================================================
 
 # Define trial expiration date (Year, Month, Day) -> Next Saturday
-TRIAL_EXPIRATION_DATE = date(2026, 8, 30)
+TRIAL_EXPIRATION_DATE = date(2026, 8, 29)
 
 
 def show_404():
