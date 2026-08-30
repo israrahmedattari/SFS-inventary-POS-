@@ -82,18 +82,6 @@ if not st.session_state.authenticated:
 # ⚠️ TRIAL CHECK: Triggers 404 after the set trial date passes
 if date.today() > TRIAL_EXPIRATION_DATE:
     show_404()
-
-# ============================================================
-# REST OF YOUR CODE (Supabase, UI Theme, Dashboard, POS, etc.)
-# ============================================================
-How It Works
-Date Check: Every time the user opens or interacts with the app, date.today() > TRIAL_EXPIRATION_DATE evaluates the current date.
-
-404 Display: Starting on the day after your set date, the show_404() function hides the sidebar and renders a realistic 404 Not Found box.
-
-Security (st.stop()): Calling st.stop() completely halts execution, ensuring none of your Supabase calls, product data, or dashboard tabs ever load for the user.  
-PY
-
 CURRENCY = "PKR"
 
 # Updated Categories & Brands list
