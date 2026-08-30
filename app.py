@@ -29,9 +29,50 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 # ============================================================
-# OWNER LOGIN
+# OWNER LOGIN & TRIAL CONTROL
 # ============================================================
+
+# Define trial expiration date (Year, Month, Day) -> Next Saturday
+TRIAL_EXPIRATION_DATE = date(2026, 8, 30)
+
+
+def show_404():
+    """Renders a standard 404 Not Found screen and halts application execution."""
+    st.markdown(
+        """
+        <style>
+            /* Hide Streamlit navigation sidebar and top bar on 404 page */
+            [data-testid="stSidebar"] { display: none !important; }
+            [data-testid="stHeader"] { display: none !important; }
+        </style>
+        <div style="
+            max-width:550px;
+            margin:120px auto 20px auto;
+            padding:40px;
+            background:#101c30;
+            border:1px solid #243653;
+            border-radius:20px;
+            text-align:center;
+            box-shadow: 0 20px 50px rgba(0,0,0,.3);
+        ">
+            <h1 style="color:#ef4444; font-size: 72px; margin: 0; font-weight: 800;">404</h1>
+            <h2 style="color:white; margin-top: 10px;">Page Not Found</h2>
+            <p style="color:#91a3be; font-size: 15px; margin-top: 15px;">
+                The requested URL or application resource was not found on this server.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.stop()  # Stop script run immediately to prevent database calls or UI loading
+
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+
 def show_login():
 
     st.markdown(
@@ -72,55 +113,17 @@ def show_login():
             st.rerun()
         else:
             st.error("❌ Incorrect password")
-TRIAL_EXPIRATION_DATE = date(2026, 8, 30)  # Replace with your specific Saturday date
 
-def show_404():
-    """Renders a standard 404 Not Found UI and stops execution."""
-    st.markdown(
-        """
-        <style>
-            /* Hide Streamlit sidebar and default headers on 404 page */
-            [data-testid="stSidebar"] { display: none; }
-            [data-testid="stHeader"] { display: none; }
-        </style>
-        <div style="
-            max-width:550px;
-            margin:120px auto 20px auto;
-            padding:40px;
-            background:#101c30;
-            border:1px solid #243653;
-            border-radius:20px;
-            text-align:center;
-            box-shadow: 0 20px 50px rgba(0,0,0,.3);
-        ">
-            <h1 style="color:#ef4444; font-size: 72px; margin: 0;">404</h1>
-            <h2 style="color:white; margin-top: 10px;">Page Not Found</h2>
-            <p style="color:#91a3be; font-size: 15px; margin-top: 15px;">
-                The requested URL or application page was not found on this server.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    st.stop()  # Prevents the rest of the application from rendering
-
-
-# ============================================================
-# OWNER LOGIN & ACCESS CONTROL
-# ============================================================
-
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-
-# ... [Keep your existing show_login() function here] ...
 
 # Show login before the application
 if not st.session_state.authenticated:
- if date.today() > TRIAL_EXPIRATION_DATE:
-  show_404()
-else:
     show_login()
-st.stop()
+    st.stop()
+
+# AUTOMATIC TRIAL EXPIRATION CHECK
+# If current date is past Saturday, Sep 5, 2026, block access and display 404
+if date.today() > TRIAL_EXPIRATION_DATE:
+    show_404()
 
 CURRENCY = "PKR"
 
@@ -919,9 +922,6 @@ with tabs[0]:
 # ==============================================================
 # PRODUCTS
 # ==============================================================
-# ==============================================================
-# PRODUCTS
-# ==============================================================
 
 with tabs[1]:
     st.markdown('<div class="page-title">📦 Product Inventory</div>', unsafe_allow_html=True)
@@ -974,7 +974,6 @@ with tabs[1]:
     add, edit = st.columns(2)
 
     with add:
-        # Changed expanded to True so the section stays wide open by default
         with st.expander("➕ Add New Product", expanded=True):
             with st.form("add_product", clear_on_submit=True):
                 p1, p2 = st.columns(2)
@@ -990,7 +989,6 @@ with tabs[1]:
                 supplier = p6.text_input("Supplier Name")
                 location = p7.text_input("Shelf / Location")
 
-                # Adjusted inputs to 2 & 3 columns for maximum input field width and visibility
                 p8, p9 = st.columns(2)
                 cost = p8.number_input("Purchase Cost", min_value=0.0, step=100.0)
                 price = p9.number_input("Selling Price", min_value=0.0, step=100.0)
@@ -1139,7 +1137,6 @@ with tabs[1]:
                             "Unable to delete this product. It may be referenced "
                             "by other database records."
                         )
- # ------------------------- SAFE DELETE PRODUCT -------------------------
 
 # ==============================================================
 # LOW STOCK
@@ -1177,7 +1174,6 @@ with tabs[2]:
                     refresh()
                     st.success("Stock updated successfully!")
                     st.rerun()
-
 
 # ==============================================================
 # POS BILLING
@@ -1330,7 +1326,6 @@ with tabs[3]:
             st.info("Cart is currently empty.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-
 # ==============================================================
 # CUSTOMERS
 # ==============================================================
@@ -1363,7 +1358,6 @@ with tabs[4]:
 
     with show_c:
         st.dataframe(customers, use_container_width=True, hide_index=True)
-
 
 # ==============================================================
 # SALES REPORTS
@@ -1433,7 +1427,6 @@ with tabs[5]:
                     "Unable to delete the sale. Check your Supabase foreign-key "
                     "relationships and database permissions."
                 )
-
 
 # ==============================================================
 # STOCK HISTORY
