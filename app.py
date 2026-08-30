@@ -33,56 +33,67 @@ st.set_page_config(
 # OWNER LOGIN
 # ============================================================
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+ TRIAL_EXPIRATION_DATE = date(2026, 8, 30)  # Replace with your specific Saturday date
 
-
-def show_login():
-
+def show_404():
+    """Renders a standard 404 Not Found UI and stops execution."""
     st.markdown(
         """
+        <style>
+            /* Hide Streamlit sidebar and default headers on 404 page */
+            [data-testid="stSidebar"] { display: none; }
+            [data-testid="stHeader"] { display: none; }
+        </style>
         <div style="
-            max-width:480px;
+            max-width:550px;
             margin:120px auto 20px auto;
-            padding:35px;
+            padding:40px;
             background:#101c30;
             border:1px solid #243653;
             border-radius:20px;
             text-align:center;
+            box-shadow: 0 20px 50px rgba(0,0,0,.3);
         ">
-            <h1 style="color:white;">  💻 SFS ENTERPRISES</h1>
-            <p style="color:#91a3be;">
-                SIGN IN
+            <h1 style="color:#ef4444; font-size: 72px; margin: 0;">404</h1>
+            <h2 style="color:white; margin-top: 10px;">Page Not Found</h2>
+            <p style="color:#91a3be; font-size: 15px; margin-top: 15px;">
+                The requested URL or application page was not found on this server.
             </p>
         </div>
         """,
         unsafe_allow_html=True
     )
+    st.stop()  # Prevents the rest of the application from rendering
 
-    password = st.text_input(
-        "🔑 Enter Password",
-        type="password",
-        placeholder="Enter owner password"
-    )
 
-    if st.button(
-        "🔓 Login",
-        type="primary",
-        use_container_width=True
-    ):
-        correct_password = st.secrets["OWNER_PASSWORD"]
+# ============================================================
+# OWNER LOGIN & ACCESS CONTROL
+# ============================================================
 
-        if hmac.compare_digest(password, correct_password):
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("❌ Incorrect password")
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
 
+# ... [Keep your existing show_login() function here] ...
 
 # Show login before the application
 if not st.session_state.authenticated:
     show_login()
     st.stop()
+
+# ⚠️ TRIAL CHECK: Triggers 404 after the set trial date passes
+if date.today() > TRIAL_EXPIRATION_DATE:
+    show_404()
+
+# ============================================================
+# REST OF YOUR CODE (Supabase, UI Theme, Dashboard, POS, etc.)
+# ============================================================
+How It Works
+Date Check: Every time the user opens or interacts with the app, date.today() > TRIAL_EXPIRATION_DATE evaluates the current date.
+
+404 Display: Starting on the day after your set date, the show_404() function hides the sidebar and renders a realistic 404 Not Found box.
+
+Security (st.stop()): Calling st.stop() completely halts execution, ensuring none of your Supabase calls, product data, or dashboard tabs ever load for the user.  
+PY
 
 CURRENCY = "PKR"
 
